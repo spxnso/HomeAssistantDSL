@@ -1,9 +1,22 @@
-﻿using HomeAssistantDSL.DSL.Lexer;
+﻿using HomeAssistantDSL.Syntax.Ast;
+using HomeAssistantDSL.Syntax.Lexer;
+using HomeAssistantDSL.Syntax.Parser;
 
 var input = File.ReadAllText($"./input.ha");
 
 var lexer =  new Lexer(input);
 
-foreach (var token in lexer.Lex()) {
-    Console.WriteLine($"[{token.Kind} '{token.Lexeme}' at {token.Offset}]");
+var tokens = lexer.Lex();
+
+var parser = new Parser(tokens);
+
+var tree = parser.Parse();
+
+
+if (tree.Diagnostics.Any()) {
+    foreach(var diagnostic in tree.Diagnostics) {
+        Console.WriteLine(diagnostic);
+    }
 }
+
+PrettyPrinter.Print(tree);

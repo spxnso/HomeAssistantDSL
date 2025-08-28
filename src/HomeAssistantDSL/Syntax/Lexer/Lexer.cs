@@ -1,11 +1,17 @@
 using System.Text;
+using HomeAssistantDSL.Syntax.Diagnostics;
 
-namespace HomeAssistantDSL.DSL.Lexer;
+namespace HomeAssistantDSL.Syntax.Lexer;
 
 public class Lexer
 {
     private string _source;
     private int _offset = 0;
+    private int _line = 1;
+    private int _column = 1;
+    
+    public DiagnosticBag Diagnostics = new();
+
     public Lexer(string source)
     {
         _source = source;
@@ -25,7 +31,16 @@ public class Lexer
     private char Advance()
     {
         if (AtEof()) return '\0';
-        return _source[_offset++]; ;
+
+        char c = _source[_offset++];
+        if (c == '\n') {
+            _line++;
+            _column = 1;
+        } else {
+            _column++;
+        }
+
+        return c;
     }
     private string AdvanceWhile(Func<char, bool> predicate)
     {
@@ -33,38 +48,39 @@ public class Lexer
 
         while (!AtEof())
         {
-            char c = Current;
+            char c = CurrentChar;
             if (!predicate(c)) break;
             sb.Append(Advance());
         }
         return sb.ToString();
     }
 
-    private char Current => _source[_offset];
-    private char Next => _source[_offset + 1];
+    private TokenPosition CurrentPosition => new TokenPosition(_offset, _line, _column);
+    private char CurrentChar => Peek();
+    private char NextChar => Peek(1);
 
     private Token ReadIdentifier()
     {
-        int _tokenOffset = _offset;
+        TokenPosition _tokenPosition = CurrentPosition;
         StringBuilder _sb = new();
 
 
         _sb.Append(Advance());
-        _sb.Append(AdvanceWhile(c => char.IsLetterOrDigit(Current) && !AtEof()));
+        _sb.Append(AdvanceWhile(c => char.IsLetterOrDigit(CurrentChar) && !AtEof()));
 
-        return new Token(TokenKind.Identifier, _sb.ToString(), _tokenOffset);
+        return new Token(TokenKind.Identifier, _sb.ToString(), _tokenPosition);
     }
 
     private char EscapeChar()
     {
-        switch (Current)
+        switch (CurrentChar)
         {
             case 'n':
                 Advance();
                 return '\n';
             case 'r':
                 Advance();
-                if (Current == 'n')
+                if (CurrentChar == 'n')
                 {
                     Advance();
                     return '\n';
@@ -88,30 +104,37 @@ public class Lexer
                 return '\0';
 
             default:
-                throw new NotSupportedException($"Unknown escape sequence '\\{Current}' at offset {_offset}");
+                var unknown = CurrentChar;
+                Advance();
+                Diagnostics.Add(new Diagnostic(DiagnosticSeverity.Error, $"Unknown escape sequence <\\{unknown}>.", CurrentPosition));
+                return unknown;
         }
     }
     private Token ReadString()
     {
-        int _tokenOffset = _offset;
+        TokenPosition _tokenPosition = CurrentPosition;
         StringBuilder _sb = new();
 
         char quote = Advance();
 
         while (!AtEof())
         {
-            if (Current == quote)
+            if (CurrentChar == quote)
             {
                 Advance();
-                return new Token(TokenKind.String, _sb.ToString(), _tokenOffset);
+                return new Token(TokenKind.String, _sb.ToString(), CurrentPosition);
             }
 
-            switch (Current)
+            switch (CurrentChar)
             {
-                case '\0':
+
                 case '\r':
                 case '\n':
-                    throw new Exception($"Unexpected character <{Current}> in string starting at offset {_tokenOffset}");
+                    _sb.Append(CurrentChar);
+                    Advance();
+                    CurrentPosition.Line++;
+                    CurrentPosition.Column = 0;
+                    break;
 
                 case '\\':
                     Advance();
@@ -125,32 +148,34 @@ public class Lexer
             }
         }
 
-        throw new Exception($"Unclosed string literal starting at offset {_tokenOffset}." + $"Missing closing {quote}");
+        Diagnostics.Add(new Diagnostic(DiagnosticSeverity.Error, $"Unclosed string literal. Missing closing {quote}.", _tokenPosition));
+        return new Token(TokenKind.BadToken, _sb.ToString(), _tokenPosition);
     }
 
     public Token ReadNext()
     {
         AdvanceWhile(char.IsWhiteSpace);
-        int _tokenOffset = _offset;
+        TokenPosition _tokenPosition = CurrentPosition;
 
-        if (AtEof()) return new Token(TokenKind.Eof, string.Empty, _tokenOffset);
+        if (AtEof()) return new Token(TokenKind.Eof, string.Empty, _tokenPosition);
 
-        if (char.IsLetter(Current))
+        if (char.IsLetter(CurrentChar))
         {
             return ReadIdentifier();
         }
 
-        switch (Current)
+        switch (CurrentChar)
         {
             case '!':
-                return new Token(TokenKind.Bang, Advance().ToString(), _tokenOffset);
+                return new Token(TokenKind.Bang, Advance().ToString(), _tokenPosition);
             case '=':
-                return new Token(TokenKind.Equals, Advance().ToString(), _tokenOffset);
+                return new Token(TokenKind.Equals, Advance().ToString(), _tokenPosition);
             case '"':
             case '\'':
                 return ReadString();
             default:
-                return new Token(TokenKind.Unknown, Advance().ToString(), _tokenOffset);
+                Diagnostics.Add(DiagnosticSeverity.Warning, $"Unexpected character <{CurrentChar}>", _tokenPosition);
+                return new Token(TokenKind.Unknown, Advance().ToString(), _tokenPosition);
         }
     }
 

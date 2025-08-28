@@ -1,13 +1,15 @@
-namespace HomeAssistantDSL.DSL.Lexer;
+namespace HomeAssistantDSL.Syntax.Lexer;
 
 public enum TokenKind
 {
     Eof,
-    Unknown,
     Identifier,
     String,
     // Operators
     Bang,
     Equals,
 
+    // Errors
+    Unknown,
+    BadToken,
 }

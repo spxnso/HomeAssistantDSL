@@ -7,15 +7,15 @@ public sealed class DirectiveStatement : Statement {
 
     public Token BangToken { get; }
     public Token NameToken { get; }
-    public Token EqualsToken { get; }
+    public Token? EqualsToken { get; }
 
-    public Expression Value { get; }
+    public Expression? Value { get; }
 
-    public DirectiveStatement(Token bang, Token name, Token equal, Expression value)
+    public DirectiveStatement(Token bang, Token name, Token? equals = null, Expression? value = null)
     {
         BangToken = bang;
         NameToken = name;
-        EqualsToken = equal;
+        EqualsToken = equals;
         Value = value;
     }
 }

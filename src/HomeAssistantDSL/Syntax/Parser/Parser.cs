@@ -68,6 +68,10 @@ public class Parser
         {
             var bangToken = Advance();
             var identifierToken = MatchAdvance(TokenKind.Identifier);
+
+            if (!Match(TokenKind.Equals))
+                return new DirectiveStatement(bangToken, identifierToken);
+                
             var equalsToken = MatchAdvance(TokenKind.Equals);
             var valueExpr = ParseExpression();
 
@@ -76,24 +80,16 @@ public class Parser
         else
         {
             Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{CurrentToken.Kind}>, expected a statement", CurrentToken.Position);
-            throw new NotSupportedException();
+            return new DummyStatement(Advance());
         }
     }
     private Expression ParseExpression()
     {
         switch (CurrentToken.Kind)
         {
-            case TokenKind.Bang:
-                {
-                    var bangToken = Advance();
-                    var identifierToken = MatchAdvance(TokenKind.Identifier);
-
-                    return new DirectiveExpression(bangToken, identifierToken);
-                }
             case TokenKind.String:
                 {
-                    var stringToken = Advance();
-                    return ParseLiteralExpression(stringToken);
+                    return ParseLiteralExpression();
                 }
             case TokenKind.Identifier:
                 {
@@ -102,20 +98,18 @@ public class Parser
                 }
             default:
                 Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{CurrentToken.Kind}>, expected an expression", CurrentToken.Position);
-                throw new NotSupportedException();
+                return new DummyExpression(Advance());
         }
     }
 
-    private LiteralExpression ParseLiteralExpression(Token token)
-    {
-        switch (token.Kind)
-        {
+    private LiteralExpression ParseLiteralExpression() {
+        switch(CurrentToken.Kind) {
             case TokenKind.String:
-                return new LiteralStringExpression(token);
+                return new LiteralStringExpression(Advance());  
             default:
-                Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{token.Kind}>, expected a literal expression", token.Position);
-                return new LiteralExpression(token);
-
+                Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{CurrentToken.Kind}>, expected a literal expression", CurrentToken.Position);
+                throw new Exception(); // TODO: Dummy
         }
     }
+
 }

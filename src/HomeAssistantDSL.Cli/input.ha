@@ -1,1 +1,1 @@
-!TOKEN="str\"ing"
+!TOKEN="supersecureapikey"

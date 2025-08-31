@@ -183,10 +183,14 @@ public class Lexer
     public List<Token> Lex()
     {
         List<Token> _tokens = new();
+
+
         while (!AtEof())
         {
             _tokens.Add(ReadNext());
         }
+
+        _tokens.Add(new Token(TokenKind.Eof, string.Empty, CurrentPosition));
 
         return _tokens;
     }

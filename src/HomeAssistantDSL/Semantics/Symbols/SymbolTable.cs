@@ -6,6 +6,7 @@ public sealed class SymbolTable
     {
         // TOKEN
         Add(new Symbol("TOKEN", SymbolKind.Directive, typeof(string)));
+        Add(new Symbol("HA_TOKEN", SymbolKind.Directive, typeof(string)));
         Add(new Symbol("BEARER", SymbolKind.Directive, typeof(string)));
         Add(new Symbol("HA_BEARER", SymbolKind.Directive, typeof(string)));
 
@@ -17,7 +18,7 @@ public sealed class SymbolTable
     public void Add(Symbol symbol)
     {
         if (_symbols.ContainsKey(symbol.Name))
-            throw new Exception($"Symbol {symbol.Name} is already defined");
+            return;
 
         _symbols[symbol.Name] = symbol;
     }
@@ -27,12 +28,7 @@ public sealed class SymbolTable
         return _symbols.TryGetValue(name, out symbol!);
     }
 
-    public Symbol LookupOrThrow(string name)
-    {
-        if (!_symbols.TryGetValue(name, out var symbol))
-            throw new Exception($"Unknown symbol: {name}");
-        return symbol;
-    }
 
+    
     public IEnumerable<Symbol> Symbols => _symbols.Values;  
 }

@@ -5,5 +5,6 @@ public enum SyntaxKind {
     LiteralStringExpression,
     IdentifierExpression,
     DummyStatement,
-    DummyExpression
+    DummyExpression,
+    LiteralBooleanExpression
 }

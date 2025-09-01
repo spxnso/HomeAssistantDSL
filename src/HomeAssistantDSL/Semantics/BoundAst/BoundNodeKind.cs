@@ -7,4 +7,6 @@ public enum BoundNodeKind {
     BoundExpressionStatement,
     BoundLiteralStringExpression,
     BoundLiteralBooleanExpression,
+    BoundDummyExpression,
+    BoundDummyStatement,
 } 

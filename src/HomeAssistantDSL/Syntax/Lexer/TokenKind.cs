@@ -5,11 +5,11 @@ public enum TokenKind
     Eof,
     Identifier,
     String,
-    // Operators
     Bang,
     Equals,
 
     // Errors
     Unknown,
     BadToken,
+    Boolean,
 }

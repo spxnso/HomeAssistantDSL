@@ -66,9 +66,24 @@ public class Lexer
 
 
         _sb.Append(Advance());
-        _sb.Append(AdvanceWhile(c => char.IsLetterOrDigit(CurrentChar) && !AtEof()));
+        _sb.Append(AdvanceWhile(c => (char.IsLetterOrDigit(CurrentChar) || CurrentChar == '_') && !AtEof()));
 
-        return new Token(TokenKind.Identifier, _sb.ToString(), _tokenPosition);
+
+        TokenKind kind;
+
+
+        switch(_sb.ToString()) {
+            case "true":
+            case "false":
+                kind = TokenKind.Boolean;
+                break;
+            
+            default:    
+                kind = TokenKind.Identifier;
+                break;
+        }
+
+        return new Token(kind, _sb.ToString(), _tokenPosition);
     }
 
     private char EscapeChar()

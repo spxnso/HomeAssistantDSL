@@ -38,7 +38,8 @@ public class Binder
         {
             DirectiveStatement ds => BindDirectiveStatement(ds),
             ExpressionStatement es => BindExpressionStatement(es),
-            _ => throw new NotImplementedException($"Binding not implemented for {stmt.Kind}"),
+            DummyStatement => BindDummyStatement(),
+            _ => BindUnsupportedStatement(stmt),
         };
     }
 
@@ -49,42 +50,94 @@ public class Binder
 
 
 
-    private BoundDirectiveStatement BindDirectiveStatement(DirectiveStatement stmt)
+private BoundDirectiveStatement BindDirectiveStatement(DirectiveStatement stmt)
+{
+    var name = stmt.NameToken.Value;
+
+    if (!_symbols.TryLookup(name, out var symbol))
     {
-        var name = stmt.NameToken.Value;
-
-        var symbol = _symbols.LookupOrThrow(name);
-
-        if (stmt.EqualsToken is null)
-            return new BoundDirectiveStatement(symbol, new BoundLiteralBooleanExpression(true));
-
-
-        BoundLiteralExpression valueExpr;
-
-        if (stmt.Value is LiteralExpression lit)
-            valueExpr = BindLiteralExpression(lit);
-        else
-            throw new Exception($"Directive '{name}' with literal shortcut must have a literal value.");
-
-        return new BoundDirectiveStatement(symbol, valueExpr);
+        // Create a placeholder so the rest of the pipeline can keep working
+        symbol = new Symbol(name, SymbolKind.Dummy);
+        Diagnostics.Add(DiagnosticSeverity.Error, $"Directive with symbol '{name}' is not defined.");
     }
 
+    // Handle shortcut form: !FLAG  →  !FLAG = true
+    if (stmt.EqualsToken is null)
+        return new BoundDirectiveStatement(symbol, new BoundLiteralBooleanExpression(true));
+
+    BoundLiteralExpression valueExpr;
+
+    if (stmt.Value is LiteralExpression lit)
+    {
+        valueExpr = BindLiteralExpression(lit);
+    }
+    else
+    {
+        Diagnostics.Add(DiagnosticSeverity.Error, $"Directive '{name}' must have a literal value.");
+        return new BoundDirectiveStatement(symbol, new BoundLiteralBooleanExpression(false));
+    }
+
+    if (symbol.Type != null && valueExpr.Value != null)
+    {
+        var valueType = valueExpr.Value.GetType();
+        if (valueType != symbol.Type)
+        {
+            Diagnostics.Add(DiagnosticSeverity.Error, $"Directive '{name}' expected a value of type '{symbol.Type.Name}', but got '{valueType.Name}'.");
+        }
+    }
+
+    return new BoundDirectiveStatement(symbol, valueExpr);
+}
+
+
+    private BoundDummyStatement BindDummyStatement()
+    {
+        Diagnostics.Add(DiagnosticSeverity.Error, $"Cannot bind dummy statement");
+
+        return new BoundDummyStatement();
+    }
+
+    private BoundStatement BindUnsupportedStatement(Statement stmt)
+    {
+        Diagnostics.Add(DiagnosticSeverity.Error, $"Binding not implemented for {stmt.Kind}");
+
+        return new BoundDummyStatement();
+    }
 
     private BoundExpression BindExpression(Expression expression)
     {
         return expression switch
         {
             LiteralExpression lit => BindLiteralExpression(lit),
-            _ => throw new NotImplementedException($"Binding not implemented for {expression.Kind}"),
+            DummyExpression dummy => BindDummyExpression(dummy),
+            _ => BindUnsupportedExpression(expression),
         };
     }
 
+
     private BoundLiteralExpression BindLiteralExpression(LiteralExpression expr)
     {
-        return expr switch {
+        return expr switch
+        {
             LiteralStringExpression s => new BoundLiteralStringExpression(s.Value),
-            _ => throw new NotSupportedException($"Binding for {expr.Kind} is not supported")
+            LiteralBooleanExpression b => new BoundLiteralBooleanExpression(bool.Parse(b.Value)),
+            _ => throw Diagnostics.Error<NotImplementedException>(DiagnosticSeverity.Error, $"Binding not implemented for LiteralExpression of kind {expr.Kind}"),
         };
     }
+
+    private BoundDummyExpression BindDummyExpression(Expression expr)
+    {
+        Diagnostics.Add(DiagnosticSeverity.Error, $"Cannot bind dummy expression");
+
+        return new BoundDummyExpression();
+    }
+
+    private BoundExpression BindUnsupportedExpression(Expression expr)
+    {
+        Diagnostics.Add(DiagnosticSeverity.Error, $"Binding not implemented for {expr.Kind}");
+
+        return new BoundDummyExpression();
+    }
+
 
 }

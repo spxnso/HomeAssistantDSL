@@ -87,6 +87,7 @@ public class Parser
     {
         switch (CurrentToken.Kind)
         {
+            case TokenKind.Boolean:
             case TokenKind.String:
                 {
                     return ParseLiteralExpression();
@@ -102,13 +103,15 @@ public class Parser
         }
     }
 
-    private LiteralExpression ParseLiteralExpression() {
+    private Expression ParseLiteralExpression() {
         switch(CurrentToken.Kind) {
             case TokenKind.String:
                 return new LiteralStringExpression(Advance());  
+            case TokenKind.Boolean:
+                return new LiteralBooleanExpression(Advance());
             default:
                 Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{CurrentToken.Kind}>, expected a literal expression", CurrentToken.Position);
-                throw new Exception(); // TODO: Dummy
+                return new DummyExpression(CurrentToken);
         }
     }
 

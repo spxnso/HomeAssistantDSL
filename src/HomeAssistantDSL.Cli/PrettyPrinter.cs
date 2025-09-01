@@ -26,8 +26,12 @@ public static class PrettyPrinter
                     Console.WriteLine($"{pad}  EqualToken: {directive.EqualsToken.Value}");
 
                 if (directive.Value != null)
+                {
                     Console.WriteLine($"{pad}  Value:");
-                PrintExpression(directive.Value!, indent + 2);
+                    PrintExpression(directive.Value, indent + 2);
+                }
+
+
 
                 break;
 
@@ -103,7 +107,7 @@ public static class BoundPrettyPrinter
                 Console.WriteLine($"{pad}BoundLiteralStringExpression: {litS.Value}");
                 break;
             case BoundLiteralExpression lit:
-                Console.WriteLine($"{pad}BoundLiteralExpression: {lit.Value}");
+                Console.WriteLine($"{pad}{lit.Kind}: {lit.Value}");
                 break;
 
             case BoundIdentifierExpression ident:

@@ -5,11 +5,12 @@ using HomeAssistantDSL.Syntax.Parser;
 
 var input = File.ReadAllText($"./input.ha");
 
-var lexer =  new Lexer(input);
+var lexer = new Lexer(input);
 
 var tokens = lexer.Lex();
 
-foreach (var token in tokens) {
+foreach (var token in tokens)
+{
     Console.WriteLine($"{token.Kind}({token.Value})");
 }
 Console.WriteLine("------------------");
@@ -26,6 +27,16 @@ var binder = new HomeAssistantDSL.Semantics.Binder.Binder();
 
 var boundTree = binder.Bind(tree);
 
+if (binder.Diagnostics.Any())
+{
+    foreach (var d in binder.Diagnostics)
+    {
+        Console.WriteLine(d);
+    }
+}
+else
+{
 
+    BoundPrettyPrinter.Print(boundTree);
+}
 
-BoundPrettyPrinter.Print(boundTree);

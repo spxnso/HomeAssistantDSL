@@ -12,4 +12,7 @@ public enum TokenKind
     Unknown,
     BadToken,
     Boolean,
+    EntityKeyword,
+    TypeKeyword,
+    Dot,
 }

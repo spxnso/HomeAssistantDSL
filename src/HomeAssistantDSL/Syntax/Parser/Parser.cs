@@ -64,23 +64,58 @@ public class Parser
 
     private Statement ParseStatement()
     {
-        if (CurrentToken.Kind == TokenKind.Bang)
+        switch (CurrentToken.Kind)
         {
-            var bangToken = Advance();
-            var identifierToken = MatchAdvance(TokenKind.Identifier);
+            case TokenKind.Bang:
+                {
+                    var bangToken = Advance();
+                    var identifierToken = MatchAdvance(TokenKind.Identifier);
 
-            if (!Match(TokenKind.Equals))
-                return new DirectiveStatement(bangToken, identifierToken);
-                
-            var equalsToken = MatchAdvance(TokenKind.Equals);
-            var valueExpr = ParseExpression();
+                    if (!Match(TokenKind.Equals))
+                        return new DirectiveStatement(bangToken, identifierToken);
 
-            return new DirectiveStatement(bangToken, identifierToken, equalsToken, valueExpr);
-        }
-        else
-        {
-            Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{CurrentToken.Kind}>, expected a statement", CurrentToken.Position);
-            return new DummyStatement(Advance());
+                    var equalsToken = MatchAdvance(TokenKind.Equals);
+                    var valueExpr = ParseExpression();
+
+                    return new DirectiveStatement(bangToken, identifierToken, equalsToken, valueExpr);
+                }
+
+            case TokenKind.EntityKeyword:
+                {
+                    var entityToken = Advance();
+
+                    Token nameToken = null!;
+                    Token typeToken = null!;
+                    Token typeKeyword = null!;
+
+                    if (NextToken.Kind == TokenKind.Dot)
+                    {
+
+                        typeToken = MatchAdvance(TokenKind.Identifier);
+                        Advance();
+                        nameToken = MatchAdvance(TokenKind.Identifier);
+                        typeKeyword = null!;
+                    }
+                    else if (NextToken.Kind == TokenKind.TypeKeyword)
+                    {
+                        Console.WriteLine($"type case");
+                        nameToken = MatchAdvance(TokenKind.Identifier);
+                        typeKeyword = MatchAdvance(TokenKind.TypeKeyword);
+                        MatchAdvance(TokenKind.Equals);
+                        typeToken = MatchAdvance(TokenKind.Identifier);
+                    }
+                    else
+                    {
+                        Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token {NextToken.Kind} after token {CurrentToken.Kind}");
+                        return new DummyStatement(Advance());
+                    }
+
+                    return new EntityDeclarationStatement(entityToken, nameToken, typeToken, typeKeyword);
+                }
+
+            default:
+                Diagnostics.Add(DiagnosticSeverity.Error, $"Unexpected token <{CurrentToken.Kind}>, expected a statement", CurrentToken.Position);
+                return new DummyStatement(Advance());
         }
     }
     private Expression ParseExpression()
@@ -103,10 +138,12 @@ public class Parser
         }
     }
 
-    private Expression ParseLiteralExpression() {
-        switch(CurrentToken.Kind) {
+    private Expression ParseLiteralExpression()
+    {
+        switch (CurrentToken.Kind)
+        {
             case TokenKind.String:
-                return new LiteralStringExpression(Advance());  
+                return new LiteralStringExpression(Advance());
             case TokenKind.Boolean:
                 return new LiteralBooleanExpression(Advance());
             default:

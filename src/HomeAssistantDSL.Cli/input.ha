@@ -1,3 +1,5 @@
-!TOKEN="true"
-!HA_TOKEN="supersecureapikey"
-!HA_BEARER="SOMETHGING"
+!TOKEN="something"
+!URL="renotor.freeboxos.fr"
+
+entity name type=light
+entity light.name 

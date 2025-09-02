@@ -9,7 +9,7 @@ public class Lexer
     private int _offset = 0;
     private int _line = 1;
     private int _column = 1;
-    
+
     public DiagnosticBag Diagnostics = new();
 
     public Lexer(string source)
@@ -33,10 +33,13 @@ public class Lexer
         if (AtEof()) return '\0';
 
         char c = _source[_offset++];
-        if (c == '\n') {
+        if (c == '\n')
+        {
             _line++;
             _column = 1;
-        } else {
+        }
+        else
+        {
             _column++;
         }
 
@@ -72,13 +75,19 @@ public class Lexer
         TokenKind kind;
 
 
-        switch(_sb.ToString()) {
+        switch (_sb.ToString())
+        {
             case "true":
             case "false":
                 kind = TokenKind.Boolean;
                 break;
-            
-            default:    
+            case "entity":
+                kind = TokenKind.EntityKeyword;
+                break;
+            case "type":
+                kind = TokenKind.TypeKeyword;
+                break;
+            default:
                 kind = TokenKind.Identifier;
                 break;
         }
@@ -114,8 +123,8 @@ public class Lexer
             case '\'':
                 Advance();
                 return '\'';
-            
-            case '0':   
+
+            case '0':
                 return '\0';
 
             default:
@@ -156,7 +165,7 @@ public class Lexer
                     char escaped = EscapeChar();
                     _sb.Append(escaped);
                     break;
-                
+
                 default:
                     _sb.Append(Advance());
                     break;
@@ -185,6 +194,8 @@ public class Lexer
                 return new Token(TokenKind.Bang, Advance().ToString(), _tokenPosition);
             case '=':
                 return new Token(TokenKind.Equals, Advance().ToString(), _tokenPosition);
+            case '.':   
+                return new Token(TokenKind.Dot, Advance().ToString(), _tokenPosition);
             case '"':
             case '\'':
                 return ReadString();

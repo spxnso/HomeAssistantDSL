@@ -38,9 +38,21 @@ public class Binder
         {
             DirectiveStatement ds => BindDirectiveStatement(ds),
             ExpressionStatement es => BindExpressionStatement(es),
+            EntityDeclarationStatement ed => BindEntityDeclarationStatement(ed),
             DummyStatement => BindDummyStatement(),
             _ => BindUnsupportedStatement(stmt),
         };
+    }
+
+    private BoundEntityDeclarationStatement BindEntityDeclarationStatement(EntityDeclarationStatement stmt)
+    {
+        var name = stmt.NameToken.Value; // name will be checked in the interpreter with the API calls
+        var typeName = stmt.TypeToken.Value; // same thing here
+
+        var nameSymbol = new Symbol(name, SymbolKind.Entity);
+        var typeSymbol = new Symbol(typeName, SymbolKind.EntityType);
+
+        return new BoundEntityDeclarationStatement(nameSymbol, typeSymbol);
     }
 
     private BoundExpressionStatement BindExpressionStatement(ExpressionStatement stmt)
@@ -56,12 +68,10 @@ private BoundDirectiveStatement BindDirectiveStatement(DirectiveStatement stmt)
 
     if (!_symbols.TryLookup(name, out var symbol))
     {
-        // Create a placeholder so the rest of the pipeline can keep working
         symbol = new Symbol(name, SymbolKind.Dummy);
         Diagnostics.Add(DiagnosticSeverity.Error, $"Directive with symbol '{name}' is not defined.");
     }
 
-    // Handle shortcut form: !FLAG  →  !FLAG = true
     if (stmt.EqualsToken is null)
         return new BoundDirectiveStatement(symbol, new BoundLiteralBooleanExpression(true));
 

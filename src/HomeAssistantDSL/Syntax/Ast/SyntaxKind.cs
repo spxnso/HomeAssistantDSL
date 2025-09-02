@@ -6,5 +6,6 @@ public enum SyntaxKind {
     IdentifierExpression,
     DummyStatement,
     DummyExpression,
-    LiteralBooleanExpression
+    LiteralBooleanExpression,
+    EntityDeclarationStatement
 }

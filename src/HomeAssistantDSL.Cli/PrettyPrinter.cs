@@ -30,11 +30,16 @@ public static class PrettyPrinter
                     Console.WriteLine($"{pad}  Value:");
                     PrintExpression(directive.Value, indent + 2);
                 }
-
-
-
                 break;
+            case EntityDeclarationStatement entity:
+                Console.WriteLine($"{pad}EntityDeclarationStatement:");
+                Console.WriteLine($"{pad}  EntityKeyword: {entity.EntityKeyword.Value}");
+                Console.WriteLine($"{pad}  NameToken: {entity.NameToken.Value}");
+                if (entity.TypeKeyword != null)
+                    Console.WriteLine($"{pad}  TypeKeyword: {entity.TypeKeyword.Value}");
 
+                Console.WriteLine($"{pad}  TypeToken: {entity.TypeToken.Value}");
+                break;
             default:
                 Console.WriteLine($"{pad}Unknown Statement: {stmt.Kind}");
                 break;
@@ -91,6 +96,11 @@ public static class BoundPrettyPrinter
                 PrintExpression(exprStmt.Expression, indent + 1);
                 break;
 
+            case BoundEntityDeclarationStatement en:
+                Console.WriteLine($"{pad}BoundEntityDeclarationStatement:");
+                Console.WriteLine($"{pad}  Name: {en.Name.Name}");
+                Console.WriteLine($"{pad}  Type: {en.Type.Name}");
+                break;
             default:
                 Console.WriteLine($"{pad}Unknown BoundStatement: {stmt.Kind}");
                 break;

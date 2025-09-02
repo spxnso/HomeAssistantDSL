@@ -9,4 +9,5 @@ public enum BoundNodeKind {
     BoundLiteralBooleanExpression,
     BoundDummyExpression,
     BoundDummyStatement,
+    BoundEntityDeclarationStatement,
 } 
